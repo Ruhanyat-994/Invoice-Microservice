@@ -6,6 +6,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![RabbitMQ](https://img.shields.io/badge/RabbitMQ-%23ff6600.svg?style=for-the-badge&logo=rabbitmq&logoColor=white)](https://www.rabbitmq.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 A robust, scalable microservice architecture for generating invoices in multiple formats (PDF, Excel, CSV). This project demonstrates modern cloud-native deployment practices using Kubernetes, Helm, and Docker.
 
@@ -103,4 +104,4 @@ Demonstrating capacity and resource allocation in EKS:
 ![Capacity Allocation](./Docs/assets/CapacityAllocationImage.png)
 
 ---
-*Created by [ruhan] - DevOps & Cloud Engineer*
+*Developed by **Mian Al Ruhanyat** - DevOps & Cloud Engineer*
