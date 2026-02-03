@@ -8,7 +8,7 @@ The system follows a **decoupled, event-driven microservices architecture** desi
 
 ### Infrastructure Diagram
 
-![System Architecture](./architecture.png)
+![System Architecture](./assets/architecture.png)
 
 ### Data Flow
 

@@ -24,7 +24,7 @@ The Invoice Generator is designed to handle asynchronous invoice processing. Use
 
 ## Architecture
 
-![System Architecture](./Docs/architecture.png)
+![System Architecture](./Docs/assets/architecture.png)
 
 ### Components
 1. API Gateway: Entry point for all requests, handling routing and file transfers.
@@ -81,11 +81,26 @@ For a deeper dive into the technical details, refer to the following documents i
 - [Optimization Walkthrough](./Docs/Optimization.md): Details on the Helm chart simplification and performance improvements.
 
 ## Showcase & Learning
+
 This project was developed to master:
-- Kubernetes: Orchestrating complex microservices and stateful workloads.
-- Helm: Templating and managing Kubernetes applications efficiently.
-- Distributed Systems: Handling asynchronous communication and distributed storage.
-- Cloud Deployment: Designing for high availability and scalability on AWS EKS.
+- **Kubernetes**: Orchestrating complex microservices and stateful workloads.
+- **Helm**: Templating and managing Kubernetes applications efficiently.
+- **Cloud Deployment**: Designing for high availability and scalability on AWS EKS.
+
+### Deployment Insights
+
+| EKS Cluster Overview | Node Group Configuration |
+| :---: | :---: |
+| ![EKS Cluster](./Docs/assets/EKSclusterImage.png) | ![Node Group](./Docs/assets/nodeGroupImage.png) |
+
+### Result Showcase
+
+Successfully generated and retrieved invoice:
+![Generated Invoice](./Docs/assets/InvoiceImage.png)
+
+### Infrastructure & Scaling
+Demonstrating capacity and resource allocation in EKS:
+![Capacity Allocation](./Docs/assets/CapacityAllocationImage.png)
 
 ---
 *Created by [ruhan] - DevOps & Cloud Engineer*
