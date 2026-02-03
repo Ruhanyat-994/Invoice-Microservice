@@ -8,19 +8,7 @@ The system follows a **decoupled, event-driven microservices architecture** desi
 
 ### Infrastructure Diagram
 
-```mermaid
-graph TD
-    User([User]) --> Gateway[API Gateway]
-    Gateway --> Auth[Auth Service]
-    Auth <--> Postgres[(PostgreSQL)]
-    Gateway <--> MongoDB[(MongoDB GridFS)]
-    Gateway --> RabbitMQ{RabbitMQ}
-    RabbitMQ --> Worker[Invoice Worker]
-    Worker <--> MongoDB
-    Worker --> RabbitMQ
-    RabbitMQ --> Notifier[Notification Service]
-    Notifier --> Email{{Email Service}}
-```
+![System Architecture](./architecture.png)
 
 ### Data Flow
 

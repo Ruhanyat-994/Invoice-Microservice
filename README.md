@@ -24,21 +24,7 @@ The Invoice Generator is designed to handle asynchronous invoice processing. Use
 
 ## Architecture
 
-The system consists of several specialized microservices interacting via REST and Message Queues:
-
-```mermaid
-graph TD
-    User([User]) --> Gateway[API Gateway]
-    Gateway --> Auth[Auth Service]
-    Auth <--> Postgres[(PostgreSQL)]
-    Gateway <--> MongoDB[(MongoDB GridFS)]
-    Gateway --> RabbitMQ{RabbitMQ}
-    RabbitMQ --> Worker[Invoice Worker]
-    Worker <--> MongoDB
-    Worker --> RabbitMQ
-    RabbitMQ --> Notifier[Notification Service]
-    Notifier --> Email{{Email Service}}
-```
+![System Architecture](./Docs/architecture.png)
 
 ### Components
 1. API Gateway: Entry point for all requests, handling routing and file transfers.
