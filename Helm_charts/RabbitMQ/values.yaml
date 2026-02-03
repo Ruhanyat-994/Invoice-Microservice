@@ -1,0 +1,29 @@
+# RabbitMQ Helm Chart Values
+
+# Number of RabbitMQ replicas
+replicaCount: 1
+
+# RabbitMQ Docker image configuration
+image:
+  repository: rabbitmq
+  tag: 3-management
+  pullPolicy: IfNotPresent
+
+# Service configuration
+service:
+  type: NodePort              # ClusterIP, NodePort, or LoadBalancer
+  port: 5672                 # AMQP port
+  nodePort: 30004            # External AMQP port (only used if type is NodePort)
+  managementPort: 15672      # Management UI port
+  managementNodePort: 31672  # External management port (only used if type is NodePort)
+
+# RabbitMQ authentication credentials
+auth:
+  user: admin
+  password: your_rabbitmq_password
+
+# Persistent storage configuration
+persistence:
+  enabled: true
+  storageClass: manual  # Use your cluster's storage class
+  size: 1Gi

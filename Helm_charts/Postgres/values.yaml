@@ -1,0 +1,28 @@
+# PostgreSQL Helm Chart Values
+
+# Number of PostgreSQL replicas
+replicaCount: 1
+
+# PostgreSQL Docker image configuration
+image:
+  repository: postgres
+  tag: 16.4-alpine
+  pullPolicy: IfNotPresent
+
+# Database authentication credentials
+auth:
+  user: admin
+  password: your_postgres_password
+  database: authdb
+
+# Service configuration
+service:
+  type: NodePort        # ClusterIP, NodePort, or LoadBalancer
+  port: 5432           # PostgreSQL default port
+  nodePort: 30003      # External port (only used if type is NodePort)
+
+# Persistent storage configuration
+persistence:
+  enabled: true
+  storageClass: manual  # Use your cluster's storage class
+  size: 1Gi

@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "invoiceapp.fullname" . }}-worker
+  labels:
+    app: worker
+    {{- include "invoiceapp.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: worker
+      {{- include "invoiceapp.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: worker
+        {{- include "invoiceapp.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: worker
+          image: "{{ .Values.images.worker.repository }}:{{ .Values.images.worker.tag }}"
+          imagePullPolicy: {{ .Values.images.worker.pullPolicy }}
+          env:
+            # MongoDB configuration
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-secrets
+                  key: mongo-uri
+            
+            # RabbitMQ configuration
+            - name: RABBITMQ_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-config
+                  key: RABBITMQ_HOST
+            - name: RABBITMQ_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-config
+                  key: RABBITMQ_USER
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-secrets
+                  key: rabbit-password
+            - name: INVOICE_QUEUE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-config
+                  key: INVOICE_QUEUE
+            - name: NOTIFICATION_QUEUE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-config
+                  key: NOTIFICATION_QUEUE
+            - name: PYTHONUNBUFFERED
+              value: "1"

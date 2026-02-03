@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "invoiceapp.fullname" . }}-notification
+  labels:
+    app: notification
+    {{- include "invoiceapp.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: notification
+      {{- include "invoiceapp.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: notification
+        {{- include "invoiceapp.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: notification
+          image: "{{ .Values.images.notification.repository }}:{{ .Values.images.notification.tag }}"
+          imagePullPolicy: {{ .Values.images.notification.pullPolicy }}
+          env:
+            # RabbitMQ configuration
+            - name: RABBITMQ_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-config
+                  key: RABBITMQ_HOST
+            - name: RABBITMQ_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-config
+                  key: RABBITMQ_USER
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-secrets
+                  key: rabbit-password
+            - name: NOTIFICATION_QUEUE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-config
+                  key: NOTIFICATION_QUEUE
+            
+            # Email configuration
+            - name: EMAIL_SENDER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-config
+                  key: EMAIL_SENDER
+            - name: EMAIL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-secrets
+                  key: gmail-password
+            - name: PYTHONUNBUFFERED
+              value: "1"

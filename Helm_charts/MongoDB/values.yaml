@@ -1,0 +1,27 @@
+# MongoDB Helm Chart Values
+
+# Number of MongoDB replicas
+replicaCount: 1
+
+# MongoDB Docker image configuration
+image:
+  repository: mongo
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Database authentication credentials
+auth:
+  rootUsername: admin
+  rootPassword: your_mongo_password
+
+# Service configuration
+service:
+  type: NodePort        # ClusterIP, NodePort, or LoadBalancer
+  port: 27017          # MongoDB default port
+  nodePort: 30005      # External port (only used if type is NodePort)
+
+# Persistent storage configuration
+persistence:
+  enabled: true
+  storageClass: manual  # Use your cluster's storage class
+  size: 1Gi

@@ -1,0 +1,52 @@
+# Invoice Application Helm Chart Values
+
+# Number of replicas for each microservice
+replicaCount: 1
+
+# Docker images for each microservice
+images:
+  auth:
+    repository: ruhanyat/auth
+    tag: latest
+    pullPolicy: Always
+  gateway:
+    repository: ruhanyat/gateway
+    tag: latest
+    pullPolicy: Always
+  worker:
+    repository: ruhanyat/worker
+    tag: latest
+    pullPolicy: Always
+  notification:
+    repository: ruhanyat/notification
+    tag: latest
+    pullPolicy: Always
+
+# Application configuration
+config:
+  # JWT secret for authentication
+  jwtSecret: "your-jwt-secret-key"
+  
+  # PostgreSQL database configuration
+  database:
+    host: "postgres-postgres"      # Service name from PostgreSQL Helm chart
+    name: "authdb"
+    user: "admin"
+    password: "your_postgres_password"
+  
+  # MongoDB configuration
+  mongodb:
+    uri: "mongodb://admin:your_mongo_password@mongo-mongodb:27017/invoices?authSource=admin"
+  
+  # RabbitMQ configuration
+  rabbitmq:
+    host: "rabbit-rabbitmq"        # Service name from RabbitMQ Helm chart
+    user: "admin"
+    password: "your_rabbitmq_password"
+    invoiceQueue: "invoices"
+    notificationQueue: "notifications"
+  
+  # Email configuration for notifications
+  email:
+    sender: "your-email@gmail.com"
+    password: "your-gmail-app-password"

@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # Infrastructure
+  postgres-service:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: your_postgres_password
+      POSTGRES_DB: authdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./src/auth-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  mongodb-service:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+
+  rabbitmq-service:
+    image: rabbitmq:3.12-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  # Application Services
+  auth-service:
+    build: ./src/auth-service
+    environment:
+      DATABASE_HOST: postgres-service
+      DATABASE_NAME: authdb
+      DATABASE_USER: admin
+      DATABASE_PASSWORD: your_postgres_password
+      JWT_SECRET: your_jwt_secret
+    depends_on:
+      - postgres-service
+
+  gateway-service:
+    build: ./src/gateway-service
+    ports:
+      - "8080:8080"
+    environment:
+      AUTH_SVC_ADDRESS: auth-service:5000
+      MONGODB_RAW_URI: mongodb://mongodb-service:27017/raw_invoices
+      MONGODB_PROCESSED_URI: mongodb://mongodb-service:27017/processed_invoices
+      INVOICE_QUEUE: invoice_queue
+    depends_on:
+      - auth-service
+      - mongodb-service
+      - rabbitmq-service
+
+  invoice-worker:
+    build: ./src/invoice-worker
+    environment:
+      MONGODB_URI: mongodb://mongodb-service:27017/
+      INVOICE_QUEUE: invoice_queue
+      NOTIFICATION_QUEUE: notification_queue
+    depends_on:
+      - mongodb-service
+      - rabbitmq-service
+
+  notification-service:
+    build: ./src/notification-service
+    environment:
+      NOTIFICATION_QUEUE: notification_queue
+      EMAIL_SENDER: "your-email@gmail.com"
+      EMAIL_PASSWORD: "your-app-password"
+    depends_on:
+      - rabbitmq-service

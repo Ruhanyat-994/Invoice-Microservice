@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "invoiceapp.fullname" . }}-auth
+  labels:
+    app: auth
+    {{- include "invoiceapp.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: auth
+      {{- include "invoiceapp.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: auth
+        {{- include "invoiceapp.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: auth
+          image: "{{ .Values.images.auth.repository }}:{{ .Values.images.auth.tag }}"
+          imagePullPolicy: {{ .Values.images.auth.pullPolicy }}
+          ports:
+            - containerPort: 5000
+              name: http
+          env:
+            - name: DATABASE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-config
+                  key: DATABASE_HOST
+            - name: DATABASE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-config
+                  key: DATABASE_NAME
+            - name: DATABASE_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-config
+                  key: DATABASE_USER
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-secrets
+                  key: db-password
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-secrets
+                  key: jwt-secret
+            - name: PYTHONUNBUFFERED
+              value: "1"

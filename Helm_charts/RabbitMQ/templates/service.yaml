@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rabbitmq.fullname" . }}
+  labels:
+    {{- include "rabbitmq.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: amqp
+      protocol: TCP
+      name: amqp
+      {{- if and (eq .Values.service.type "NodePort") .Values.service.nodePort }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
+    - port: {{ .Values.service.managementPort }}
+      targetPort: management
+      protocol: TCP
+      name: management
+      {{- if and (eq .Values.service.type "NodePort") .Values.service.managementNodePort }}
+      nodePort: {{ .Values.service.managementNodePort }}
+      {{- end }}
+  selector:
+    {{- include "rabbitmq.selectorLabels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rabbitmq.fullname" . }}-headless
+  labels:
+    {{- include "rabbitmq.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  ports:
+    - port: 5672
+      name: amqp
+    - port: 15672
+      name: management
+  selector:
+    {{- include "rabbitmq.selectorLabels" . | nindent 4 }}

@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "invoiceapp.fullname" . }}-gateway
+  labels:
+    app: gateway
+    {{- include "invoiceapp.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: gateway
+      {{- include "invoiceapp.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: gateway
+        {{- include "invoiceapp.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: gateway
+          image: "{{ .Values.images.gateway.repository }}:{{ .Values.images.gateway.tag }}"
+          imagePullPolicy: {{ .Values.images.gateway.pullPolicy }}
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            # Auth service address
+            - name: AUTH_SVC_ADDRESS
+              value: "{{ include "invoiceapp.fullname" . }}-auth:5000"
+            
+            # MongoDB configuration
+            - name: MONGODB_RAW_URI
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-secrets
+                  key: mongo-uri
+            - name: MONGODB_PROCESSED_URI
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-secrets
+                  key: mongo-uri
+            
+            # RabbitMQ configuration
+            - name: RABBITMQ_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-config
+                  key: RABBITMQ_HOST
+            - name: RABBITMQ_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-config
+                  key: RABBITMQ_USER
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-secrets
+                  key: rabbit-password
+            - name: INVOICE_QUEUE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-config
+                  key: INVOICE_QUEUE
+            
+            # JWT Secret
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "invoiceapp.fullname" . }}-secrets
+                  key: jwt-secret
+            - name: PYTHONUNBUFFERED
+              value: "1"

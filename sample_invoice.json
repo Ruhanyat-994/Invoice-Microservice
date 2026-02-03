@@ -1,0 +1,33 @@
+{
+    "company_name": "Antigravity Solutions",
+    "company_address": "123 Tech Lane, Silicon Valley, CA 94025",
+    "company_phone": "555-0199",
+    "date": "2026-02-02",
+    "invoice_no": "INV-2026-001",
+    "bill_to_name": "John Doe",
+    "bill_to_company": "Future Corp",
+    "bill_to_address": "456 Innovation Blvd, NY 10001",
+    "ship_to_name": "John Doe",
+    "ship_to_company": "Future Corp Warehouse",
+    "ship_to_address": "789 Logistics Way, NJ 07001",
+    "items": [
+        {
+            "id": "Z345678",
+            "description": "Premium Cloud Server",
+            "qty": 2,
+            "unit_price": 500.00,
+            "total": 1000.00
+        },
+        {
+            "id": "Z342342",
+            "description": "Annual Support Suite",
+            "qty": 1,
+            "unit_price": 250.00,
+            "total": 250.00
+        }
+    ],
+    "subtotal": 1250.00,
+    "tax_rate": 8.5,
+    "tax_amount": 106.25,
+    "total_amount": 1356.25
+}
