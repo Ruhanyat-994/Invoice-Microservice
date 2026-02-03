@@ -16,14 +16,83 @@ Key capabilities include:
 
 The system follows a decoupled, event-driven microservices architecture designed for scalability and fault tolerance.
 
+### Architecture Components
+
+```mermaid
+graph TD
+    Client[Client / cURL]
+    
+    subgraph "Kubernetes Cluster (EKS)"
+        subgraph "Ingress/Gateway Layer"
+            Gateway[API Gateway Service]
+        end
+        
+        subgraph "Application Logic"
+            Auth[Auth Service]
+            Worker[Invoice Worker]
+            Notif[Notification Service]
+        end
+        
+        subgraph "Data & Communication"
+            PG[(PostgreSQL - Auth DB)]
+            MG[(MongoDB - GridFS)]
+            RMQ[RabbitMQ - Message Broker]
+        end
+    end
+
+    Client -->|REST API| Gateway
+    Gateway -->|Verify JWT| Auth
+    Auth -->|Credentials| PG
+    
+    Gateway -->|Store JSON| MG
+    Gateway -->|Queue Task| RMQ
+    
+    RMQ -->|Consume 'invoices'| Worker
+    Worker -->|Fetch JSON| MG
+    Worker -->|Store PDF/XLSX| MG
+    Worker -->|Queue Notif| RMQ
+    
+    RMQ -->|Consume 'notifications'| Notif
+    Notif -->|Send Email| Client
+```
+
 ### Data Flow
 
-1. Authentication: The API Gateway delegates login requests to the Auth Service, which verifies credentials against a PostgreSQL database and issues a stateless JWT token.
-2. Invoice Request: The user uploads invoice data in JSON format to the Gateway.
-3. Storage and Queuing: The Gateway stores the raw JSON in MongoDB GridFS and publishes a message to the invoices queue in RabbitMQ.
-4. Asynchronous Processing: The Invoice Worker consumes the message, retrieves the data from MongoDB, generates the invoice file (PDF, Excel, or CSV), and stores the result back in MongoDB.
-5. Notification: Upon completion, the Worker publishes a message to the notifications queue.
-6. User Notification: The Notification Service picks up the message and sends an email to the user with the download link or file ID.
+The following sequence diagram details the internal process from authentication to file delivery:
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant GW as API Gateway
+    participant AS as Auth Service
+    participant DB as Postgres
+    participant FS as MongoDB (GridFS)
+    participant MQ as RabbitMQ
+    participant WK as Invoice Worker
+
+    User->>GW: POST /login (Basic Auth)
+    GW->>AS: Validate Credentials
+    AS->>DB: Query User
+    DB-->>AS: User Valid
+    AS-->>GW: JWT Token
+    GW-->>User: 200 OK (Token)
+
+    User->>GW: POST /upload (JSON + JWT)
+    GW->>FS: Save Raw JSON
+    GW->>MQ: Publish Task (invoice_id)
+    GW-->>User: 202 Accepted
+
+    MQ->>WK: Consume Task
+    WK->>FS: Fetch Raw JSON
+    Note over WK: Generate PDF/Excel
+    WK->>FS: Save Processed File
+    WK->>MQ: Publish Completion (file_id)
+    
+    User->>GW: GET /download?fid=...
+    GW->>FS: Retrieve File
+    FS-->>GW: Stream Content
+    GW-->>User: Binary File
+```
 
 ### Technical Design Patterns
 
@@ -95,7 +164,6 @@ docker push <DOCKER_USER>/notification:latest
    ```bash
    kubectl get nodes
    ```
-
 
 2. Install Infrastructure:
    ```bash
