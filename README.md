@@ -1,56 +1,101 @@
 # Invoice Generator Microservice
 
-[![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=for-the-badge&logo=kubernetes&logoColor=white)](https://kubernetes.io/)
-[![Helm](https://img.shields.io/badge/helm-%230f1623.svg?style=for-the-badge&logo=helm&logoColor=white)](https://helm.sh/)
-[![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)](https://www.python.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-[![RabbitMQ](https://img.shields.io/badge/RabbitMQ-%23ff6600.svg?style=for-the-badge&logo=rabbitmq&logoColor=white)](https://www.rabbitmq.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-
-A robust, scalable microservice architecture for generating invoices in multiple formats (PDF, Excel, CSV). This project demonstrates modern cloud-native deployment practices using Kubernetes, Helm, and Docker.
+![System Architecture](./Assets/architecture.png)
 
 ## Project Overview
 
-The Invoice Generator is designed to handle asynchronous invoice processing. Users can upload invoice data via a REST API, which triggers a background worker to generate the requested file. 
+The Invoice Generator is a microservice-based application designed to handle asynchronous invoice processing. It allows users to upload invoice data via a REST API, which triggers a background worker to generate professional invoice files in multiple formats, including PDF, Excel, and CSV. 
 
-### Key Features
-- Stateless Authentication: JWT-based secure access.
-- Asynchronous Processing: Decoupled architecture using RabbitMQ for reliable background tasks.
-- Polyglot Persistence: 
-  - PostgreSQL for structured user and authentication data.
-  - MongoDB (GridFS) for distributed storage of large invoice files.
-- Multiple Formats: Support for PDF, Excel, and CSV generation.
-- Cloud-Native: Optimized for deployment on AWS EKS or any Kubernetes cluster.
+Key capabilities include:
+- Asynchronous document generation using a message broker.
+- Secure user authentication and authorization.
+- Distributed file storage for raw data and generated documents.
+- Scalable deployment architecture suitable for cloud environments.
 
-## Architecture
+## System Architecture
 
-![System Architecture](./Docs/assets/architecture.png)
+The system follows a decoupled, event-driven microservices architecture designed for scalability and fault tolerance.
 
-### Components
-1. API Gateway: Entry point for all requests, handling routing and file transfers.
-2. Auth Service: Manages user authentication and JWT token issuance.
-3. Invoice Worker: Consumes tasks and generates the actual invoice files.
-4. Notification Service: Sends email alerts when invoices are ready.
+### Data Flow
+
+1. Authentication: The API Gateway delegates login requests to the Auth Service, which verifies credentials against a PostgreSQL database and issues a stateless JWT token.
+2. Invoice Request: The user uploads invoice data in JSON format to the Gateway.
+3. Storage and Queuing: The Gateway stores the raw JSON in MongoDB GridFS and publishes a message to the invoices queue in RabbitMQ.
+4. Asynchronous Processing: The Invoice Worker consumes the message, retrieves the data from MongoDB, generates the invoice file (PDF, Excel, or CSV), and stores the result back in MongoDB.
+5. Notification: Upon completion, the Worker publishes a message to the notifications queue.
+6. User Notification: The Notification Service picks up the message and sends an email to the user with the download link or file ID.
+
+### Technical Design Patterns
+
+- Asynchronous Task Processing: Uses RabbitMQ to decouple the API Gateway from CPU-intensive generation tasks.
+- Distributed Storage: Uses MongoDB GridFS to handle large files consistently across ephemeral containers.
+- Stateless Authentication: Uses JWT to allow services to verify identity without constant database lookups.
+- API Gateway Pattern: Provides a single entry point for routing, file transfers, and service orchestration.
 
 ## Tech Stack
-- Backend: Python (Flask, Pika, PyMongo)
-- Infrastructure: Kubernetes, Helm Charts
-- Databases: PostgreSQL, MongoDB
-- Messaging: RabbitMQ
-- Deployment: Docker, AWS EKS
 
-## Deployment Guide
+| Category | Technology |
+| :--- | :--- |
+| Backend | Python (Flask, Pika, PyMongo) |
+| Databases | PostgreSQL (Auth), MongoDB (GridFS Storage) |
+| Messaging | RabbitMQ |
+| Orchestration | Kubernetes (EKS) |
+| Infrastructure | Helm, Docker |
+| Security | JWT (PyJWT) |
 
-### Local Development (Docker Compose)
+## Docker Commands
+
+These commands are used for building, tagging, and pushing the microservice images, as well as running the application locally.
+
+### Local Development
 ```bash
 docker-compose up --build
 ```
 
-### Production Deployment (Helm)
+### Build Images
+```bash
+docker build -t auth-service ./src/auth-service
+docker build -t gateway-service ./src/gateway-service
+docker build -t invoice-worker ./src/invoice-worker
+docker build -t notification-service ./src/notification-service
+```
 
-1. Configure Credentials:
-   Update the `values.yaml` in each chart or use `--set` during installation.
+### Tag Images for Registry
+```bash
+docker tag auth-service:latest <DOCKER_USER>/auth:latest
+docker tag gateway-service:latest <DOCKER_USER>/gateway:latest
+docker tag invoice-worker:latest <DOCKER_USER>/worker:latest
+docker tag notification-service:latest <DOCKER_USER>/notification:latest
+```
+
+### Push Images to Registry
+```bash
+docker push <DOCKER_USER>/auth:latest
+docker push <DOCKER_USER>/gateway:latest
+docker push <DOCKER_USER>/worker:latest
+docker push <DOCKER_USER>/notification:latest
+```
+
+## Deployment Guide
+
+### Kubernetes Deployment (via Helm)
+
+1. Create EKS Cluster:
+   Use `eksctl` to provision the cluster. This may take 15-20 minutes.
+   ```bash
+   eksctl create cluster \
+     --name invoice-microservice \
+     --region ap-southeast-1 \
+     --nodegroup-name ng1 \
+     --node-type t3.medium \
+     --nodes 1 \
+     --managed
+   ```
+   Once created, verify the connection:
+   ```bash
+   kubectl get nodes
+   ```
+
 
 2. Install Infrastructure:
    ```bash
@@ -60,48 +105,146 @@ docker-compose up --build
    ```
 
 3. Install Application:
+   Update the image repositories in Helm_charts/InvoiceApp/values.yaml and run:
    ```bash
    helm install invoiceapp Helm_charts/InvoiceApp
    ```
 
-## API Reference
+## API Documentation & EKS Testing Guide
 
-| Endpoint | Method | Purpose |
-| :--- | :--- | :--- |
-| `/login` | `POST` | Get JWT Token (requires Basic Auth) |
-| `/upload` | `POST` | Upload JSON to generate invoice |
-| `/download` | `GET` | Retrieve processed invoice |
+This section provides a comprehensive list of API endpoints, service URLs, and step-by-step instructions to verify your Invoice Generator deployment on an EKS cluster.
 
-##  Detailed Documentation
+### 1. Service Endpoints (EKS/Public IP)
 
-For a deeper dive into the technical details, refer to the following documents in the `Docs/` directory:
+Assuming your EKS Node Public IP is `<PUBLIC_IP>`, the following services are accessible:
 
-- [System Architecture](./Docs/Architecture.md): Detailed component analysis and data flow.
-- [Deployment & Testing](./Docs/Deployment.md): Guide for Kubernetes deployment and E2E verification.
-- [API Reference](./Docs/API_Reference.md): Complete list of endpoints and request/response schemas.
-- [Optimization Walkthrough](./Docs/Optimization.md): Details on the Helm chart simplification and performance improvements.
+| Service | Port | Protocol | Purpose |
+| :--- | :--- | :--- | :--- |
+| **API Gateway** | `30080` | HTTP | Main entry point for the application |
+| **PostgreSQL** | `30003` | TCP | Auth Database (Postgres) |
+| **MongoDB** | `30005` | TCP | File Storage (GridFS) |
+| **RabbitMQ AMQP** | `30004` | TCP | Message Broker (AMQP) |
+| **RabbitMQ UI** | `31672` | HTTP | RabbitMQ Management Console |
 
-## Showcase & Learning
+### 2. API Endpoints Reference
 
-This project was developed to master:
-- **Kubernetes**: Orchestrating complex microservices and stateful workloads.
-- **Helm**: Templating and managing Kubernetes applications efficiently.
-- **Cloud Deployment**: Designing for high availability and scalability on AWS EKS.
+All application requests should be sent to the **API Gateway** at `http://<PUBLIC_IP>:30080`.
 
-### Deployment Insights
+#### A. Authentication
+- **Endpoint**: `POST /login`
+- **Auth**: Basic Auth (`username:password`)
+- **Action**: Returns a JWT token for subsequent requests.
+- **Default Credentials**: `test@example.com` / `password` (defined in `init.sql`)
 
-| EKS Cluster Overview | Node Group Configuration |
+#### B. Upload Invoice Data
+- **Endpoint**: `POST /upload`
+- **Query Param**: `format=pdf` (can be `pdf`, `excel`, or `csv`)
+- **Header**: `Authorization: Bearer <JWT_TOKEN>`
+- **Body**: Form-data with key `file` containing a JSON file (e.g., `sample_invoice.json`)
+- **Action**: Stores raw JSON in MongoDB and queues a processing task.
+
+#### C. Download Processed Invoice
+- **Endpoint**: `GET /download`
+- **Query Param**: `fid=<processed_fid>`
+- **Header**: `Authorization: Bearer <JWT_TOKEN>`
+- **Action**: Downloads the generated PDF/Excel/CSV file.
+
+### 3. Step-by-Step Testing Guide (using cURL)
+
+Follow these steps to verify the entire flow on your EKS cluster.
+
+#### Step 1: Get your EKS Node Public IP
+Find the public IP of one of your worker nodes:
+```bash
+kubectl get nodes -o wide
+```
+*Look for the `EXTERNAL-IP` column.*
+
+#### Step 2: Login and Get Token
+Execute this command to receive your JWT token:
+```bash
+# Store the token in a variable
+TOKEN=$(curl -X POST http://<PUBLIC_IP>:30080/login \
+  -u "test@example.com:password")
+
+echo "Your Token: $TOKEN"
+```
+
+#### Step 3: Upload an Invoice for Processing
+Upload the provided `sample_invoice.json` file.
+```bash
+curl -X POST "http://<PUBLIC_IP>:30080/upload?format=pdf" \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@sample_invoice.json"
+```
+*Expected Result: `success!`*
+
+#### Step 4: Verify Processing in RabbitMQ
+1. Open your browser to `http://<PUBLIC_IP>:31672`
+2. Login with `ruhan` / `ruhan123`
+3. Click on the **Queues** tab.
+4. You should see `invoices` and `notifications` queues being active.
+
+#### Step 5: Check Notification Logs
+Verify the worker processed the file and the notification service sent an email:
+```bash
+# Check worker logs
+kubectl logs -l app=worker
+
+# Check notification logs
+kubectl logs -l app=notification
+```
+*Look for the `processed_fid` in the logs.*
+
+#### Step 6: Download the Generated File
+Use the `processed_fid` from the logs/notification:
+```bash
+curl -X GET "http://<PUBLIC_IP>:30080/download?fid=<PROCESSED_FID>" \
+  -H "Authorization: Bearer $TOKEN" \
+  -o generated_invoice.pdf
+```
+
+### 4. Health Check Commands (Kubernetes)
+
+Use these commands to quickly verify the status of your infrastructure:
+
+#### Check Pod Status
+```bash
+kubectl get pods
+```
+*All pods should be `Running` with `1/1 READY`.*
+
+#### Check Service Mappings
+```bash
+kubectl get svc
+```
+*Verify NodePorts are as expected.*
+
+#### Check Detailed Pod Failures
+If any pod is failing, use:
+```bash
+kubectl describe pod <pod-name>
+kubectl logs <pod-name> --tail=50
+```
+
+### 5. Security Note for EKS
+
+> [!IMPORTANT]
+> Ensure your **EKS Security Group** allows inbound traffic on the following ports:
+> - `30080`, `30003`, `30005`, `30004`, `31672`
+
+## Result Showcase
+
+### Infrastructure Overview
+| EKS Cluster | Node Group |
 | :---: | :---: |
-| ![EKS Cluster](./Docs/assets/EKSclusterImage.png) | ![Node Group](./Docs/assets/nodeGroupImage.png) |
+| ![EKS Cluster](./Assets/EKSclusterImage.png) | ![Node Group](./Assets/nodeGroupImage.png) |
 
-### Result Showcase
+### Generated Invoice
+![Generated Invoice](./Assets/InvoiceImage.png)
 
-Successfully generated and retrieved invoice:
-![Generated Invoice](./Docs/assets/InvoiceImage.png)
-
-### Infrastructure & Scaling
-Demonstrating capacity and resource allocation in EKS:
-![Capacity Allocation](./Docs/assets/CapacityAllocationImage.png)
+### Resource Allocation
+![Capacity Allocation](./Assets/CapacityAllocationImage.png)
 
 ---
-*Developed by **Mian Al Ruhanyat** - DevOps & Cloud Engineer*
+Developed by Mian Al Ruhanyat - DevOps and Cloud Engineer
